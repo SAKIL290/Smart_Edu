@@ -1,49 +1,34 @@
 <?php
-
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
-{
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+class User extends Authenticatable {
+    use Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'name', 'email', 'password', 'role',
+        'phone', 'bio', 'profile_image'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = ['email_verified_at' => 'datetime', 'password' => 'hashed'];
+
+    public function isStudent(): bool { return $this->role === 'student'; }
+    public function isTutor(): bool  { return $this->role === 'tutor'; }
+
+    // Tutor relationships
+    public function courses() { return $this->hasMany(Course::class); }
+    public function subjects() { return $this->belongsToMany(Subject::class, 'subject_tutor'); }
+    public function bookingsAsTutor() { return $this->hasMany(Booking::class, 'tutor_id'); }
+
+    // Student relationships
+    public function enrollments() { return $this->hasMany(Enrollment::class); }
+    public function enrolledCourses() { return $this->belongsToMany(Course::class, 'enrollments'); }
+    public function bookingsAsStudent() { return $this->hasMany(Booking::class, 'student_id'); }
+
+    // Shared
+    public function messages() { return $this->hasMany(Message::class); }
 }
